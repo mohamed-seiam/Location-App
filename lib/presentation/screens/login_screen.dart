@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:location_app/constance/my_color.dart';
+import 'package:location_app/constance/strings.dart';
 
 class LogInScreen extends StatelessWidget {
   LogInScreen({Key? key}) : super(key: key);
 
   late String phoneNumber;
-
+GlobalKey<FormState> _globalKey = GlobalKey();
   Widget _buildIntroText() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'What is your phone number ?',
@@ -105,11 +107,13 @@ class LogInScreen extends StatelessWidget {
     return flag;
   }
 
-  Widget _buildNextButton() {
+  Widget _buildNextButton(BuildContext context) {
     return Align(
       alignment: Alignment.centerRight,
       child: ElevatedButton(
-        onPressed: () {},
+        onPressed: () {
+          Navigator.pushNamed(context, otpScreen);
+        },
         style: ElevatedButton.styleFrom(
             minimumSize: const Size(110, 50),
             backgroundColor: Colors.black,
@@ -133,7 +137,7 @@ class LogInScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: Colors.white,
         body: Form(
-          key: UniqueKey(),
+          key: _globalKey,
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 32, vertical: 88),
             child: Column(
@@ -145,7 +149,7 @@ class LogInScreen extends StatelessWidget {
                 ),
                 _buildPhoneFormField(),
                 const SizedBox(height: 70,),
-                _buildNextButton(),
+                _buildNextButton(context),
               ],
             ),
           ),
