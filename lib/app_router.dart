@@ -29,10 +29,11 @@ class AppRouter {
                 child: LogInScreen()),
         );
       case otpScreen:
+        final phoneNumber = settings.arguments as String;
         return MaterialPageRoute(
           builder: (_)=>  BlocProvider<PhoneAuthCubit>.value(
             value: phoneAuthCubit!,
-              child: const OtpScreen()),
+              child:  OtpScreen(phoneNumber: phoneNumber,)),
         );
     }
     return null;

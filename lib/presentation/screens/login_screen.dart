@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:location_app/business_logic/cubit/auth_cubit/phone_auth_cubit.dart';
+import 'package:location_app/business_logic/cubit/auth_cubit/phone_auth_states.dart';
 import 'package:location_app/constance/my_color.dart';
 import 'package:location_app/constance/strings.dart';
 
@@ -107,12 +110,28 @@ GlobalKey<FormState> _globalKey = GlobalKey();
     return flag;
   }
 
+
+  Future<void> _register (BuildContext context) async
+  {
+      if (!_globalKey.currentState!.validate())
+      {
+        Navigator.pop(context);
+        return;
+      }else
+      {
+        Navigator.pop(context);
+        _globalKey.currentState!.save();
+        BlocProvider.of<PhoneAuthCubit>(context).submitPhoneNUmber(phoneNumber);
+      }
+  }
+
   Widget _buildNextButton(BuildContext context) {
     return Align(
       alignment: Alignment.centerRight,
       child: ElevatedButton(
         onPressed: () {
-          Navigator.pushNamed(context, otpScreen);
+          showProgressIndicator(context);
+          _register(context);
         },
         style: ElevatedButton.styleFrom(
             minimumSize: const Size(110, 50),
@@ -128,6 +147,56 @@ GlobalKey<FormState> _globalKey = GlobalKey();
           ),
         ),
       ),
+    );
+  }
+
+
+  void showProgressIndicator(BuildContext context) {
+    AlertDialog alertDialog = const AlertDialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      content: Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color> (Colors.black),
+        ),
+      ),
+    );
+    showDialog(
+        context: context,
+        builder:(context)
+        {
+          return alertDialog ;
+        });
+  }
+
+
+  Widget _buildPhoneNUmberSubmitedBloc()
+  {
+    return BlocListener <PhoneAuthCubit,PhoneAuthStates> (
+      listenWhen: (previous,current)
+      {
+        return previous!=current;
+      },
+      listener:(context,state) {
+        if (state is LoadingAuthState)
+        {
+          return showProgressIndicator (context);
+        }if(state is PhoneSubmittedAuthState)
+        {
+          Navigator.pop(context);
+          Navigator.pushNamed(context, otpScreen,arguments: phoneNumber);
+        }if (state is ErrorOccurred)
+        {
+          Navigator.pop(context);
+          String errorMessage = state.error;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(errorMessage),
+            backgroundColor: Colors.black,
+            duration:const Duration(seconds: 3),
+          ),);
+        }
+      },
+      child: Container(),
     );
   }
 
@@ -150,6 +219,7 @@ GlobalKey<FormState> _globalKey = GlobalKey();
                 _buildPhoneFormField(),
                 const SizedBox(height: 70,),
                 _buildNextButton(context),
+                _buildPhoneNUmberSubmitedBloc(),
               ],
             ),
           ),

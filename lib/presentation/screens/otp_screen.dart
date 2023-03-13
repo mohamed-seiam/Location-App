@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:location_app/constance/my_color.dart';
+import 'package:location_app/constance/strings.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 
+import '../../business_logic/cubit/auth_cubit/phone_auth_cubit.dart';
+import '../../business_logic/cubit/auth_cubit/phone_auth_states.dart';
+
 class OtpScreen extends StatelessWidget {
-  const OtpScreen({Key? key}) : super(key: key);
-  final String phoneNumber = '';
+   OtpScreen({Key? key,required this.phoneNumber }) : super(key: key);
+  final String phoneNumber ;
+
+  late String otpCode;
 
   Widget _buildIntroText()
   {
@@ -69,6 +76,7 @@ class OtpScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         enableActiveFill: true,
         onCompleted: (v) {
+          otpCode = v;
           print("Completed");
         },
         onChanged: (value) {
@@ -78,12 +86,19 @@ class OtpScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildVerifyButton()
+  void _logIn(BuildContext context){
+    BlocProvider.of<PhoneAuthCubit>(context).submitOtp(otpCode);
+  }
+
+  Widget _buildVerifyButton(BuildContext context)
   {
     return Align(
       alignment: Alignment.centerRight,
       child: ElevatedButton(
-        onPressed: () {},
+        onPressed: () {
+          showProgressIndicator(context);
+          _logIn(context);
+        },
         style: ElevatedButton.styleFrom(
             minimumSize: const Size(110, 50),
             backgroundColor: Colors.black,
@@ -101,6 +116,54 @@ class OtpScreen extends StatelessWidget {
     );
   }
 
+  void showProgressIndicator(BuildContext context) {
+    AlertDialog alertDialog = const AlertDialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      content: Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color> (Colors.black),
+        ),
+      ),
+    );
+    showDialog(
+        context: context,
+        builder:(context)
+        {
+          return alertDialog ;
+        });
+  }
+
+  Widget _buildOtpVerifiedBloc(){
+    return BlocListener <PhoneAuthCubit,PhoneAuthStates> (
+      listenWhen: (previous,current)
+      {
+        return previous!=current;
+      },
+      listener:(context,state) {
+        if (state is LoadingAuthState)
+        {
+          return showProgressIndicator (context);
+        }if(state is PhoneOtpVerifiedAuthState)
+        {
+          Navigator.pop(context);
+          Navigator.pushReplacementNamed(context, mapScreen);
+        }if (state is ErrorPhoneOtpVerifiedAuthState)
+        {
+          Navigator.pop(context);
+          String errorMessage = state.error;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.black,
+            duration:const Duration(seconds: 3),
+          ),);
+        }
+      },
+      child: Container(),
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -113,7 +176,8 @@ class OtpScreen extends StatelessWidget {
                const SizedBox(height: 88,),
                 _buildPinCodeField(context),
                const SizedBox(height: 60,),
-                _buildVerifyButton(),
+                _buildVerifyButton(context),
+                _buildOtpVerifiedBloc(),
               ],
             ),
           ),
